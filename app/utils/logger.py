@@ -1,5 +1,6 @@
 import logging
 import logging.config
+import os
 from app.config.settings import settings
 
 LOGGING_CONFIG = {
@@ -21,7 +22,7 @@ LOGGING_CONFIG = {
             "class": "logging.handlers.TimedRotatingFileHandler",
             "formatter": "default",
             "level": "ERROR",
-            "filename": "logs/error.log",
+            "filename": os.path.join(settings.LOG_DIR, "error.log"),
             "when": "midnight",
             "backupCount": 30,
             "encoding": "utf8",
@@ -30,7 +31,7 @@ LOGGING_CONFIG = {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "default",
             "level": settings.LOG_LEVEL.upper(),
-            "filename": "logs/app.log",
+            "filename": os.path.join(settings.LOG_DIR, "app.log"),
             "maxBytes": 10_000_000,
             "backupCount": 5,
             "encoding": "utf8",
@@ -50,4 +51,6 @@ LOGGING_CONFIG = {
 }
 
 def setup_logging():
+    os.makedirs(settings.LOG_DIR, exist_ok=True)
+    
     logging.config.dictConfig(LOGGING_CONFIG)
