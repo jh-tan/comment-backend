@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.pyo
+*.pyd
+*.pkl
+*.egg-info/
+.eggs/
+
+# Byte-compiled
+*.so
+*.dll
+
+# Environment / Secrets
+.env
+.env.*
+!env.example 
+*.secret
+*.token
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Databases
+*.sqlite3
+*.db
+*.db-journal
+
+# Pytest
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.pytest_cache/
+
+# Build
+build/
+dist/
+*.egg
+*.whl
+
+# Docker
+*.pid
+*.tar
+*.container
+*.img
+
+# Logs
+logs/
+*.log
+*.out
+*.pid

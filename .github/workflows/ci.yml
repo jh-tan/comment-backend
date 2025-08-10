@@ -1,0 +1,144 @@
+name: Automated Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+        pip install pytest pytest-cov pytest-asyncio flake8 black isort
+
+    - name: Set up test environment variables
+      run: |
+        echo "DEBUG=True" >> $GITHUB_ENV
+        echo "SECRET_KEY=test-secret-key-for-github-actions-super-long-and-secure" >> $GITHUB_ENV
+        echo "ACCESS_TOKEN_EXPIRE_MINUTES=30" >> $GITHUB_ENV
+        echo "REFRESH_TOKEN_EXPIRE_MINUTES=10080" >> $GITHUB_ENV
+        echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
+
+    - name: Run all tests with coverage
+      run: |
+        echo "Running all tests with coverage..."
+        pytest tests/ -v --cov=app --cov-report=term-missing --cov-report=html --cov-report=xml --junitxml=pytest-report.xml
+
+    - name: Upload coverage to Codecov
+      if: success()
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Archive test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ github.run_number }}
+        path: |
+          htmlcov/
+          coverage.xml
+          pytest-report.xml
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-security-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-security-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install bandit safety
+
+    - name: Run Bandit security scan
+      run: |
+        echo "Running Bandit security scan..."
+        bandit -r app/ -f json -o bandit-report.json -ll || echo "Bandit scan completed with warnings"
+        bandit -r app/ -f txt || echo "Bandit scan completed"
+
+    - name: Run Safety vulnerability scan
+      run: |
+        echo "Running Safety vulnerability scan..."
+        safety check --json --output safety-report.json || echo "Safety scan completed with findings"
+        safety check || echo "Safety scan completed"
+
+    - name: Archive security scan results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-reports-${{ github.run_number }}
+        path: |
+          bandit-report.json
+          safety-report.json
+
+  notify:
+    needs: [test, security-scan]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Check results and notify
+      run: |
+        echo "=== CI Pipeline Results ==="
+        echo "Test Job: ${{ needs.test.result }}"
+        echo "Security Scan Job: ${{ needs.security-scan.result }}"
+        
+        if [[ "${{ needs.test.result }}" == "success" && "${{ needs.security-scan.result }}" == "success" ]]; then
+          echo "All tests passed and security scans completed successfully!"
+          echo "Pipeline completed successfully."
+        else
+          echo "Some jobs failed."
+          if [[ "${{ needs.test.result }}" == "failure" ]]; then
+            echo "Test job failed!"
+          fi
+          if [[ "${{ needs.security-scan.result }}" == "failure" ]]; then
+            echo "Security scan job failed!"
+          fi
+          echo "Please check the job logs for details."
+          exit 1
+        fi
