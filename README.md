@@ -150,7 +150,7 @@ Get the edit history of a specific comment. (requires authentication and can sam
 
 ### Health Check
 
-#### GET /health
+#### GET api/v1/health
 Check if the API is running properly.
 
 No parameters required.
@@ -247,10 +247,10 @@ Response:
 ```
 
 ### 4.1 Get comments using GraphQL
-```
-curl -X POST http://localhost:8000/graphql \
+```bash
+curl -X POST "http://localhost:8000/graphql" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
   -d '{"query": "query { comments { id content userId createdAt updatedAt user { id username group } } }"}'
 ```
 

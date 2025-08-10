@@ -14,7 +14,6 @@ class Comment(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     user = relationship("User", back_populates="comments")
-    # Only one relationship to CommentHistory is needed
     history_entries = relationship(
         "CommentHistory", 
         back_populates="comment",
