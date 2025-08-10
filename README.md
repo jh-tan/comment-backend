@@ -20,7 +20,17 @@ git clone <repository-url>
 cd comment_backend
 ```
 
-2. Start the application using Docker Compose:
+2. Copy the `.env.example` file to `.env` and modify as needed:
+```bash
+cp .env.example .env
+```
+**Important Configuration Notes:**
+
+- For Docker setup: Only modify POSTGRES_PASSWORD and POSTGRES_DB in your .env file
+- Do NOT change: POSTGRES_SERVER or POSTGRES_USER when using Docker - these are fixed for current being
+- For local development: Set ENVIRONMENT=local and use POSTGRES_SERVER_LOCAL and POSTGRES_USER_LOCAL variables
+
+3. Start the application using Docker Compose:
 ```bash
 docker-compose up --build -d
 ```
@@ -240,7 +250,7 @@ Response:
 ```
 curl -X POST http://localhost:8000/graphql \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"query": "query { comments { id content userId createdAt updatedAt user { id username group } } }"}'
 ```
 
@@ -249,9 +259,20 @@ Response:
 {
   "data": {
     "comments": [
-      {"id": .., "content": "...", "userId": .., "createdAt": "...", "updatedAt": "...", "user": {"id": .., "username": "..", "group": ".."}}
-      ]
-    }
+      {
+        "id": 123,
+        "content": "This is a comment",
+        "userId": 45,
+        "createdAt": "2025-08-10T12:00:00Z",
+        "updatedAt": "2025-08-10T12:15:00Z",
+        "user": {
+          "id": 45,
+          "username": "johndoe",
+          "group": "admin"
+        }
+      }
+    ]
+  }
 }
 
 ```
