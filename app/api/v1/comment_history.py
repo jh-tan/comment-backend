@@ -29,20 +29,3 @@ async def read_comment_history(
         db, comment_id=comment_id, skip=skip, limit=limit
     )
     return history
-
-
-@router.get("/{history_id}", response_model=schemas.CommentHistory)
-async def read_history_entry(
-    *,
-    db: AsyncSession = Depends(deps.get_db),
-    history_id: int,
-    current_user: User = Depends(deps.get_current_user),
-):
-    history = await repositories.comment_history.get(db, id=history_id)
-    if not history:
-        raise HTTPException(status_code=404, detail="History entry not found")
-    
-    comment = await repositories.comment.get(db, id=history.comment_id)
-    ensure_comment_permission(current_user, comment, "read")
-    
-    return history
